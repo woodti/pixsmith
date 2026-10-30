@@ -1,0 +1,36 @@
+{
+  "name": "pixsmith",
+  "private": true,
+  "version": "0.1.0",
+  "description": "In-browser AI image toolbox: background removal, ID photos, object removal and upscaling",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/woodti/pixsmith"
+  },
+  "type": "module",
+  "scripts": {
+    "models": "node scripts/fetch-models.mjs",
+    "predev": "node scripts/fetch-models.mjs",
+    "dev": "vite",
+    "prebuild": "node scripts/fetch-models.mjs",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --pretty false"
+  },
+  "dependencies": {
+    "jszip": "^3.10.2",
+    "lucide-react": "^0.468.0",
+    "onnxruntime-web": "^1.31.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "@webgpu/types": "^0.1.74",
+    "typescript": "~5.8.3",
+    "vite": "^6.4.5"
+  }
+}
