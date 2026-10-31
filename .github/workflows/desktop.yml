@@ -45,6 +45,19 @@ jobs:
           path: public/models
           key: models-${{ hashFiles('scripts/fetch-models.mjs') }}
       - run: npm ci
+      # Sign + notarize the macOS app when the Apple secrets are configured; without them the build is unsigned.
+      - if: startsWith(matrix.os, 'macos')
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          for v in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+            if [ -n "${!v}" ]; then printf '%s=%s\n' "$v" "$(printf %s "${!v}" | tr -d '\n')" >> "$GITHUB_ENV"; fi
+          done
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -63,8 +76,7 @@ jobs:
             | macOS（Intel） | `PixSmith_x.y.z_x64.dmg` |
             | Linux | `.AppImage` 或 `.deb` |
 
-            安装包暂未签名：
-            - Windows 出现“已保护你的电脑”时，点“更多信息 → 仍要运行”。
-            - macOS 提示“已损坏，无法打开”时，在终端执行 `xattr -cr /Applications/PixSmith.app` 后再打开。
+            macOS 版已经过 Apple 签名和公证，可以直接打开。
+            Windows 版暂未签名：出现“已保护你的电脑”时，点“更多信息 → 仍要运行”。
           releaseDraft: false
           prerelease: false

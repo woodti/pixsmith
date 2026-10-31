@@ -1,7 +1,7 @@
 {
   "name": "pixsmith",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "In-browser AI image toolbox: background removal, ID photos, object removal and upscaling",
   "license": "MIT",
   "repository": {

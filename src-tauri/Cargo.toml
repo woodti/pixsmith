@@ -1,6 +1,6 @@
 [package]
 name = "pixsmith"
-version = "0.1.0"
+version = "0.1.1"
 description = "图匠 PixSmith: offline AI image toolbox"
 authors = ["woodti"]
 license = "MIT"

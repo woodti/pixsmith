@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "PixSmith",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "identifier": "cn.wooddata.pixsmith",
   "build": {
     "frontendDist": "../dist-desktop",
@@ -60,7 +60,8 @@
       }
     },
     "macOS": {
-      "minimumSystemVersion": "12.0"
+      "minimumSystemVersion": "12.0",
+      "entitlements": "Entitlements.plist"
     },
     "resources": {
       "../public/models/": "models/"

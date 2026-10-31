@@ -73,7 +73,7 @@ Windows / macOS / Linux 安装包在 [Releases](https://github.com/woodti/pixsmi
 - CPU 计算可以多线程（网页版受浏览器限制只能用 1 个线程）
 - 导出时弹出系统“另存为”窗口
 
-安装包暂未签名：Windows 出现“已保护你的电脑”时点“更多信息 → 仍要运行”；macOS 提示“已损坏”时执行 `xattr -cr /Applications/PixSmith.app`。
+macOS 版经过 Apple 签名和公证；Windows 版暂未签名，出现“已保护你的电脑”时点“更多信息 → 仍要运行”。
 
 自己打包需要 [Rust](https://rustup.rs/) 和对应系统的 [Tauri 依赖](https://tauri.app/start/prerequisites/)：
 
