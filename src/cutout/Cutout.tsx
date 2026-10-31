@@ -1,3 +1,4 @@
+import { desktop } from '../lib/desktop'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import JSZip from 'jszip'
 import { Download, Eraser, Eye, EyeOff, Hand, ImagePlus, Loader2, Maximize, Minus, Paintbrush, Plus, RefreshCw, Undo2, X } from 'lucide-react'
@@ -484,8 +485,10 @@ export default function Cutout({ toast }: { toast: (msg: string) => void }) {
           </div>
           <p className="meta">
             {item?.used ? `这张用的是${MODEL_NAMES[item.used]}模型。` : ''}
-            人像模型发丝更细；物品模型首次下载约 90MB；高清模型约 115MB，复杂边缘最准。
-            {!hdOk && ' 当前浏览器不支持高清模式。'}
+            {desktop
+              ? '人像模型发丝更细；物品模型适合商品、宠物；高清模型复杂边缘最准。'
+              : '人像模型发丝更细；物品模型首次下载约 90MB；高清模型约 115MB，复杂边缘最准。'}
+            {!hdOk && (desktop ? ' 这台电脑不支持高清模式（需要 WebGPU）。' : ' 当前浏览器不支持高清模式。')}
           </p>
           <button className="reset" disabled={!item || item.status === 'running'} onClick={redo}>
             <RefreshCw size={12} /> 用当前方式重新抠这张

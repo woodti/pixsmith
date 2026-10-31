@@ -16,9 +16,15 @@
     "prebuild": "node scripts/fetch-models.mjs",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b --pretty false"
+    "typecheck": "tsc -b --pretty false",
+    "build:desktop": "tsc -b && vite build --outDir dist-desktop --emptyOutDir && node -e \"require('fs').rmSync('dist-desktop/models',{recursive:true,force:true})\"",
+    "tauri": "tauri",
+    "predesktop": "node scripts/fetch-models.mjs",
+    "desktop": "tauri build",
+    "prebuild:desktop": "node scripts/fetch-models.mjs"
   },
   "dependencies": {
+    "@tauri-apps/api": "^2.12.4",
     "jszip": "^3.10.2",
     "lucide-react": "^0.468.0",
     "onnxruntime-web": "^1.31.1",
@@ -26,6 +32,7 @@
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.12.4",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^4.7.0",

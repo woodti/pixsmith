@@ -7,7 +7,7 @@
 所有 AI 模型都在你的浏览器里运行（WebGPU / WebAssembly），照片不上传任何服务器。
 免费 · 开源 · 不用注册 · 可离线
 
-[在线使用](https://woodti.github.io/pixsmith/) · [English](#english)
+[在线使用](https://woodti.github.io/pixsmith/) · [下载客户端](https://github.com/woodti/pixsmith/releases/latest) · [English](#english)
 
 </div>
 
@@ -65,6 +65,25 @@
 
 推理引擎是 [ONNX Runtime Web](https://onnxruntime.ai/)。边缘颜色修正用的是 Forte & Pitié 的 [Approximate Fast Foreground Colour Estimation](https://arxiv.org/abs/2006.14970)。
 
+## 桌面客户端
+
+Windows / macOS / Linux 安装包在 [Releases](https://github.com/woodti/pixsmith/releases/latest)。客户端用 [Tauri](https://tauri.app/) 打包，内置全部模型，装好后断网也能用：
+
+- 不用等模型下载，打开就能用
+- CPU 计算可以多线程（网页版受浏览器限制只能用 1 个线程）
+- 导出时弹出系统“另存为”窗口
+
+安装包暂未签名：Windows 出现“已保护你的电脑”时点“更多信息 → 仍要运行”；macOS 提示“已损坏”时执行 `xattr -cr /Applications/PixSmith.app`。
+
+自己打包需要 [Rust](https://rustup.rs/) 和对应系统的 [Tauri 依赖](https://tauri.app/start/prerequisites/)：
+
+```bash
+npm install
+npm run desktop     # 产物在 src-tauri/target/release/bundle/
+```
+
+推送 `v*` 标签会由 GitHub Actions 构建四个平台的安装包并发布 Release。
+
 ## 本地运行
 
 需要 Node.js 20 或更高版本。
@@ -87,12 +106,14 @@ src/
   idphoto/     证件照（规格、美颜、自检、正装、排版、拍照）
   erase/       AI 消除
   upscale/     变清晰
+src-tauri/     桌面客户端（Tauri 2）
 scripts/       模型下载、IS-Net fp16 转换
 ```
 
 ## 已知限制
 
 - 没有 WebGPU 时用单线程 CPU 推理：通用抠图约 20 秒一张，变清晰会先把大图缩小
+- Safari 以及 macOS / Linux 客户端（WebKit 内核）只用 CPU 计算：onnxruntime 的 WebGPU 版本在 WebKit 里推理会卡住，所以这些环境固定用纯 WebAssembly 版本
 - 证件照的规格数据是常见要求，正式使用请以官方要求为准
 - 换正装是代码绘制的通用款式，头部明显歪斜或长发披肩时需要手动微调
 - 高清抠图（BiRefNet）需要支持 shader-f16 的 WebGPU，目前只验证了模型文件和前后处理，尚未在真实显卡上实测，属于实验功能
@@ -111,6 +132,7 @@ MIT。模型按各自许可使用（见上表）。
 - **ID photos** — face-aware framing for common Chinese and visa sizes, background colours, retouching, procedurally drawn business outfits, requirement checks, camera capture, file-size cap, 4×6 / 3.5×5 print sheets (mixed sizes) at 300 dpi.
 - **Object removal** — paint over people, clutter or watermarks; MI-GAN fills the hole.
 - **Upscaling** — Real-ESRGAN ×2 / ×4 with tiled inference and a before/after slider.
+- **Desktop app** — Tauri 2 build for Windows / macOS / Linux with every model bundled (fully offline, multi-threaded CPU inference). Grab it from [Releases](https://github.com/woodti/pixsmith/releases/latest) or run `npm run desktop`.
 
 ```bash
 npm install

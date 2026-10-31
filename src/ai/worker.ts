@@ -1,20 +1,20 @@
 /// <reference lib="webworker" />
 /// <reference types="@webgpu/types" />
-import * as ort from 'onnxruntime-web/webgpu'
-import wasmUrl from 'onnxruntime-web/ort-wasm-simd-threaded.asyncify.wasm?url'
+import type * as Ort from 'onnxruntime-web'
+import asyncifyUrl from 'onnxruntime-web/ort-wasm-simd-threaded.asyncify.wasm?url'
+import wasmUrl from 'onnxruntime-web/ort-wasm-simd-threaded.wasm?url'
 import { MODELS, YUNET_SIZE, type Backend, type DeviceInfo, type Face, type MatteModel, type ModelId } from './models'
 import { estimateForeground } from '../lib/foreground'
 
-ort.env.wasm.wasmPaths = { wasm: wasmUrl }
-ort.env.wasm.numThreads = 1
-
 const CACHE = 'pixsmith-models-v1'
-const sessions = new Map<ModelId, Promise<{ session: ort.InferenceSession; backend: Backend }>>()
+const sessions = new Map<ModelId, Promise<{ session: Ort.InferenceSession; backend: Backend }>>()
 /** models/ directory, resolved against the page (the worker's own URL lives under assets/) */
 let modelBase = ''
+/** false in the desktop app: models are bundled, a cached copy would only double the disk use */
+let useCache = true
 
 export type Request =
-  | { id: number; type: 'init'; modelBase: string }
+  | { id: number; type: 'init'; modelBase: string; cache: boolean }
   | { id: number; type: 'device' }
   | { id: number; type: 'load'; model: ModelId }
   | { id: number; type: 'matte'; model: MatteModel; rgba: Uint8ClampedArray; w: number; h: number }
@@ -30,10 +30,15 @@ export type Response =
 
 const post = (msg: Response, transfer: Transferable[] = []) => self.postMessage(msg, transfer)
 
+// WebKit (Safari, and the macOS / Linux desktop webviews) hangs forever inside session.run() with the
+// asyncify build that onnxruntime's WebGPU backend needs, so WebKit always gets the plain wasm build.
+const webkit = /AppleWebKit/.test(navigator.userAgent) && !/Chrome|Chromium|Edg\//.test(navigator.userAgent)
+
 let deviceInfo: Promise<DeviceInfo> | null = null
 function device() {
   deviceInfo ??= (async () => {
     try {
+      if (webkit) return { webgpu: false, f16: false }
       const gpu = (navigator as Navigator & { gpu?: GPU }).gpu as GPU | undefined
       const adapter = await gpu?.requestAdapter()
       if (!adapter) return { webgpu: false, f16: false }
@@ -52,7 +57,7 @@ function device() {
 
 async function fetchFile(url: string, expected: number, onChunk: (n: number) => void) {
   let cache: Cache | null = null
-  try {
+  if (useCache) try {
     cache = await caches.open(CACHE)
     const hit = await cache.match(url)
     if (hit) {
@@ -113,7 +118,26 @@ async function download(id: number, model: ModelId) {
   return parts.length === 1 ? parts[0] : concat(parts, parts.reduce((n, p) => n + p.length, 0))
 }
 
+/** Set by runtime() before any session exists, so everything after a session() call can use it. */
+let ort: typeof Ort
+let runtimeReady: Promise<typeof Ort> | null = null
+/** Loads the WebGPU build of onnxruntime only when WebGPU will actually be used. */
+function runtime() {
+  runtimeReady ??= (async () => {
+    const gpu = (await device()).webgpu
+    const mod: typeof Ort = gpu ? await import('onnxruntime-web/webgpu') : await import('onnxruntime-web/wasm')
+    mod.env.wasm.wasmPaths = { wasm: gpu ? asyncifyUrl : wasmUrl }
+    // Threads need SharedArrayBuffer, i.e. a cross-origin isolated page (the desktop app sends COOP/COEP;
+    // GitHub Pages can't). Keep a core free for the UI.
+    mod.env.wasm.numThreads = self.crossOriginIsolated ? Math.max(1, Math.min(4, navigator.hardwareConcurrency - 1)) : 1
+    ort = mod
+    return mod
+  })()
+  return runtimeReady
+}
+
 async function createSession(id: number, model: ModelId) {
+  await runtime()
   const info = MODELS[model]
   const dev = await device()
   const gpuOk = dev.webgpu && (!info.fp16 || dev.f16)
@@ -308,11 +332,14 @@ async function upscale(id: number, rgba: Uint8ClampedArray, w: number, h: number
   return out
 }
 
-self.onmessage = async (e: MessageEvent<Request>) => {
+// onnxruntime's thread pool re-loads this same bundle as its pthread workers (named "em-pthread");
+// those must keep the handler onnxruntime installed, not ours.
+if (!self.name.startsWith('em-pthread')) self.onmessage = async (e: MessageEvent<Request>) => {
   const req = e.data
   try {
     if (req.type === 'init') {
       modelBase = req.modelBase
+      useCache = req.cache
     } else if (req.type === 'device') {
       post({ id: req.id, type: 'done', result: await device() })
     } else if (req.type === 'load') {

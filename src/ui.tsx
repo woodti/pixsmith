@@ -1,3 +1,4 @@
+import { desktop } from './lib/desktop'
 import type { ReactNode } from 'react'
 import { isLoaded, loadModel } from './ai/client'
 import { MODELS, type ModelId } from './ai/models'
@@ -18,7 +19,7 @@ export async function ensureModels(models: ModelId[], setBusy: (b: Busy | null) 
       setBusy(
         loaded >= total
           ? { label: `初始化${MODELS[m].name}…` }
-          : { label: `下载${MODELS[m].name} ${mb(loaded)} / ${mb(total)} MB`, progress: loaded / total },
+          : { label: `${desktop ? '读取' : '下载'}${MODELS[m].name} ${mb(loaded)} / ${mb(total)} MB`, progress: loaded / total },
       ),
     )
   }
@@ -35,7 +36,9 @@ export function BusyOverlay({ busy }: { busy: Busy }) {
             style={busy.progress === undefined ? undefined : { width: `${Math.round(busy.progress * 100)}%` }}
           />
         </div>
-        <div className="busy-note">模型只需下载一次，之后会缓存在浏览器里；图片全程在本地处理，不会上传</div>
+        <div className="busy-note">
+          {desktop ? '模型已内置在客户端里；图片全程在本机处理，不会上传' : '模型只需下载一次，之后会缓存在浏览器里；图片全程在本地处理，不会上传'}
+        </div>
       </div>
     </div>
   )

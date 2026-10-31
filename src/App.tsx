@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Github } from 'lucide-react'
+import { Download, Github } from 'lucide-react'
+import { desktop, RELEASES } from './lib/desktop'
 import Cutout from './cutout/Cutout'
 import Erase from './erase/Erase'
 import Home from './home/Home'
@@ -57,9 +58,14 @@ export default function App() {
               </a>
             ))}
           </nav>
-          <span className="tagline">AI 在你的浏览器里运行，图片不上传</span>
+          <span className="tagline">{desktop ? 'AI 在本机运行，不联网不上传' : 'AI 在你的浏览器里运行，图片不上传'}</span>
         </div>
         <div className="actions">
+          {!desktop && (
+            <a className="btn" href={RELEASES} target="_blank" rel="noreferrer" title="Windows / macOS / Linux，内置模型，离线可用">
+              <Download size={16} /> 客户端
+            </a>
+          )}
           <a className="btn" href="https://github.com/woodti/pixsmith" target="_blank" rel="noreferrer">
             <Github size={16} /> 开源
           </a>

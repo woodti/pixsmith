@@ -5,3 +5,4 @@ dist
 *.tsbuildinfo
 public/models
 public/ort
+dist-desktop

@@ -1,3 +1,4 @@
+import { desktop } from '../lib/desktop'
 import { useEffect, useState } from 'react'
 import { Cpu, Eraser, IdCard, Lock, Scissors, Sparkles, Trash2, Zap } from 'lucide-react'
 import { backendOf, device, onModelsChange } from '../ai/client'
@@ -58,7 +59,7 @@ export default function Home() {
 
   useEffect(() => {
     device().then(setDev)
-    cachedModels().then(setCached)
+    if (!desktop) cachedModels().then(setCached)
     return onModelsChange(() => {
       setTick((t) => t + 1)
       cachedModels().then(setCached)
@@ -74,17 +75,18 @@ export default function Home() {
     setCached(new Set())
   }
 
+  const threads = self.crossOriginIsolated ? Math.max(1, Math.min(4, navigator.hardwareConcurrency - 1)) : 1
   const total = Object.values(MODELS).reduce((n, m) => n + m.size, 0)
   const cachedSize = [...cached].reduce((n, id) => n + MODELS[id].size, 0)
 
   return (
     <main className="home">
       <section className="hero">
-        <h1>浏览器里的 AI 图片工具箱</h1>
+        <h1>{desktop ? '离线 AI 图片工具箱' : '浏览器里的 AI 图片工具箱'}</h1>
         <p>
-          抠图、证件照、消除、变清晰——所有 AI 模型都下载到你的浏览器里运行。
+          {desktop ? '抠图、证件照、消除、变清晰——所有 AI 模型都已内置，在你的电脑上运行。' : '抠图、证件照、消除、变清晰——所有 AI 模型都下载到你的浏览器里运行。'}
           <br />
-          照片不上传任何服务器，免费、开源、可离线。
+          {desktop ? '不联网、不上传，免费、开源。' : '照片不上传任何服务器，免费、开源、可离线。'}
         </p>
         <div className="badges">
           <span>
@@ -127,15 +129,19 @@ export default function Home() {
           </div>
           <div>
             <span className="k">CPU 线程</span>
-            <span>{navigator.hardwareConcurrency || '?'}（推理使用 1 个，在后台线程运行，不卡页面）</span>
+            <span>
+              {navigator.hardwareConcurrency || '?'}（推理使用 {threads} 个，在后台线程运行，不卡页面）
+            </span>
           </div>
         </div>
 
         <div className="lab-head">
           <h2>模型</h2>
-          <button className="reset" onClick={clear} disabled={!cached.size}>
-            <Trash2 size={12} /> 清除已缓存模型（{(cachedSize / 1e6).toFixed(0)} / {(total / 1e6).toFixed(0)} MB）
-          </button>
+          {!desktop && (
+            <button className="reset" onClick={clear} disabled={!cached.size}>
+              <Trash2 size={12} /> 清除已缓存模型（{(cachedSize / 1e6).toFixed(0)} / {(total / 1e6).toFixed(0)} MB）
+            </button>
+          )}
         </div>
         <div className="models">
           {(Object.entries(MODELS) as [ModelId, (typeof MODELS)[ModelId]][]).map(([id, m]) => {
@@ -152,7 +158,13 @@ export default function Home() {
                   <span>{(m.size / 1e6).toFixed(m.size < 1e6 ? 1 : 0)} MB</span>
                   <span>{m.license}</span>
                   <span className={backend ? 'ok' : cached.has(id) ? '' : 'dim'}>
-                    {backend ? `运行于 ${backend === 'webgpu' ? 'GPU' : 'CPU'}` : cached.has(id) ? '已缓存' : '用到时下载'}
+                    {backend
+                      ? `运行于 ${backend === 'webgpu' ? 'GPU' : 'CPU'}`
+                      : desktop
+                        ? '已内置'
+                        : cached.has(id)
+                          ? '已缓存'
+                          : '用到时下载'}
                   </span>
                 </div>
               </div>
@@ -160,7 +172,8 @@ export default function Home() {
           })}
         </div>
         <p className="meta">
-          模型来自各自的开源项目，按原许可使用；用 ONNX Runtime Web 在浏览器中推理。模型首次使用时下载，之后从浏览器缓存读取，可离线使用。
+          模型来自各自的开源项目，按原许可使用；用 ONNX Runtime Web 推理。
+          {desktop ? '桌面版已内置全部模型，无需联网。' : '模型首次使用时下载，之后从浏览器缓存读取，可离线使用。'}
         </p>
       </section>
     </main>

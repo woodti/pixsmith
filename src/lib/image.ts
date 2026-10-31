@@ -1,3 +1,4 @@
+import { desktop, saveFile } from './desktop'
 export function makeCanvas(w: number, h: number) {
   const c = document.createElement('canvas')
   c.width = w
@@ -63,6 +64,10 @@ export async function jpegUnder(c: HTMLCanvasElement, maxKB: number, dpi?: numbe
 }
 
 export function download(blob: Blob, name: string) {
+  if (desktop) {
+    saveFile(blob, name).catch((e) => alert(`保存失败：${e}`))
+    return
+  }
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url

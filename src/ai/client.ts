@@ -1,3 +1,4 @@
+import { desktop, modelBase } from '../lib/desktop'
 import { MATTE_SIZE, YUNET_SIZE, modnetSize, type Backend, type DeviceInfo, type Face, type MatteModel, type ModelId } from './models'
 import type { Request, Response } from './worker'
 import { makeCanvas } from '../lib/image'
@@ -27,7 +28,19 @@ function getWorker() {
         else p.reject(new Error(msg.message))
       }
     }
-    worker.postMessage({ id: 0, type: 'init', modelBase: new URL('models/', document.baseURI).href } satisfies Request)
+    // A crashed worker (e.g. a wasm abort or out of memory) never answers: fail every pending call
+    // and start a fresh worker next time instead of leaving the UI spinning.
+    worker.onerror = (e) => {
+      e.preventDefault()
+      const err = new Error(`AI 计算出错：${e.message || '后台线程崩溃'}`)
+      pending.forEach((p) => p.reject(err))
+      pending.clear()
+      backends.clear()
+      worker?.terminate()
+      worker = null
+      listeners.forEach((fn) => fn())
+    }
+    worker.postMessage({ id: 0, type: 'init', modelBase: modelBase(), cache: !desktop } satisfies Request)
   }
   return worker
 }
